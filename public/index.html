@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Boom</title>
+<style>
+:root{--bg:#f6f3ef;--card:#fff;--text:#27231f;--muted:#837b73;--accent:#d889a6;--bubble:#f0e8e3;--border:#e5ddd6;--wall:none}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif;background-image:var(--wall);background-size:cover;background-position:center;background-attachment:fixed}
+.wrap{width:min(860px,100%);margin:auto;padding:18px}.card{background:color-mix(in srgb,var(--card) 94%,transparent);border:1px solid var(--border);border-radius:22px;overflow:hidden;box-shadow:0 12px 35px #0000000b;backdrop-filter:blur(10px)}
+header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:12px;align-items:center}h1{font-size:22px;margin:0}.status{font-size:12px;color:var(--muted)}.head-actions{display:flex;gap:8px;align-items:center}.room{font-size:12px;background:var(--bubble);padding:7px 9px;border-radius:9px;white-space:nowrap}
+.iconbtn{padding:9px 11px;border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:10px;font-weight:700;cursor:pointer}.join{padding:28px}.join h2{margin-top:0}.grid{display:grid;gap:12px}label{font-size:13px;color:var(--muted)}input,button{font:inherit}input{width:100%;padding:13px;border:1px solid #dcd2ca;border-radius:12px;background:var(--card);color:var(--text)}button{border:0;border-radius:12px;padding:13px 16px;background:var(--accent);color:white;font-weight:700;cursor:pointer}.hint{font-size:12px;color:var(--muted);line-height:1.5}
+#chat{display:none}.messages{height:55vh;min-height:360px;max-height:650px;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:9px}.msg{max-width:78%;padding:10px 13px;border-radius:16px;background:var(--bubble);align-self:flex-start}.msg.mine{align-self:flex-end;background:color-mix(in srgb,var(--accent) 25%,white)}.msg.sticker-msg{background:transparent !important;box-shadow:none;padding:4px}
+.msg img.chat-img{max-width:100%;max-height:250px;border-radius:12px;display:block;margin-top:6px}.msg img.chat-sticker{width:130px;height:130px;object-fit:contain;display:block}
+.name{font-size:11px;font-weight:700;margin-bottom:3px}.time{font-size:10px;color:var(--muted);margin-top:4px}.system{font-size:11px;color:var(--muted);text-align:center;margin:5px}.composer{display:flex;gap:8px;padding:12px;border-top:1px solid var(--border);align-items:center}.composer input[type="text"]{flex:1}
+.btn-attach{background:var(--card);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:12px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.panel{display:none;padding:16px;border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--card) 96%,transparent)}.panel.open{display:block}.panel h3{margin:0 0 12px}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{flex:1;min-width:130px}.swatches{display:flex;gap:8px;flex-wrap:wrap}.swatch{min-width:52px;min-height:44px;border:2px solid var(--border);border-radius:10px;cursor:pointer}.wallpapers{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.wall{height:72px;border-radius:12px;border:2px solid var(--border);cursor:pointer;background-size:cover;background-position:center}.wall.none{background:var(--bg)}
+.sticker-preview-box{display:flex;gap:10px;align-items:center;margin-top:10px;background:var(--bubble);padding:10px;border-radius:12px;display:none}
+.sticker-preview-box img{width:80px;height:80px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--border)}
+@media(max-width:480px){.wrap{padding:8px}.messages{height:60vh}.msg{max-width:88%}.wallpapers{grid-template-columns:repeat(2,1fr)}}
+</style></head>
+<body><div class="wrap"><div class="card">
+<header><div><h1>Boom</h1><div class="status" id="status">Belum tersambung</div></div><div class="head-actions"><div class="room" id="roomLabel">ROOM —</div><button class="iconbtn" id="settingsBtn" type="button" aria-label="Pengaturan">⚙</button></div></header>
+<section class="join" id="join"><h2>Masuk ke Boom</h2><div class="grid"><div><label>Nama</label><input id="name" maxlength="24" placeholder="contoh: Miko"></div><div><label>Kode login / room</label><input id="room" maxlength="32" placeholder="contoh: BOOM123"></div><button id="joinBtn">Login</button><div class="hint">Kode adalah kunci masuk room. Gunakan kode yang kamu bagikan hanya ke orang yang boleh masuk.</div></div></section>
+<section id="chat"><div class="panel" id="settings"><h3>Tampilan & Stiker</h3><div class="row"><div><label>Tema warna</label><div class="swatches" id="swatches"></div></div><div><label>Wallpaper</label><div class="wallpapers" id="wallpapers"></div></div></div><div style="margin-top:12px"><label>URL wallpaper sendiri</label><div class="row"><input id="wallUrl" placeholder="https://.../gambar.jpg"><button id="applyWall" type="button">Pakai wallpaper</button></div></div>
+<hr style="border:0;border-top:1px solid var(--border);margin:16px 0">
+<h3>🎨 Buat Stiker Baru</h3>
+<div class="row"><input type="file" id="stickerInput" accept="image/*"><button id="makeStickerBtn" type="button">Bikin Stiker</button></div>
+<div class="sticker-preview-box" id="stickerPrevBox"><img id="stickerPrevImg" src=""><button id="sendStickerBtn" type="button">Kirim Stiker Ini</button></div>
+</div>
+
+<div class="messages" id="messages" aria-live="polite"></div>
+<form class="composer" id="form">
+  <input type="file" id="imageInput" accept="image/*" style="display:none">
+  <button class="btn-attach" type="button" id="photoBtn" title="Kirim Foto">📷</button>
+  <input id="text" maxlength="1000" autocomplete="off" placeholder="Tulis pesan...">
+  <button type="submit">Kirim</button>
+</form></section>
+</div></div>
+<script>
+const $=id=>document.getElementById(id);let socket,myName="",pendingStickerBase64=null;
+const themes=[['Rose','#d889a6','#f6f3ef','#27231f','#f0e8e3'],['Ocean','#5795c9','#eef5fb','#1d2935','#dceaf6'],['Night','#8b7bd8','#15151b','#f4f2fa','#282733'],['Forest','#6d9d7b','#eef4ef','#233028','#dce9df']];
+const walls=[['none',''],['Gradient','linear-gradient(135deg,#f7d6e3,#d8e9f7)'],['Night','linear-gradient(135deg,#171827,#45405c)'],['Sunset','linear-gradient(135deg,#f4c6a5,#d98ca8)']];
+
+function addMessage(m,mine=false){
+  const box=$('messages'),el=document.createElement('div');
+  el.className='msg'+(mine?' mine':'')+(m.isSticker?' sticker-msg':'');
+  
+  const n=document.createElement('div');
+  n.className='name';
+  n.textContent=m.name;
+  el.appendChild(n);
+
+  if(m.text){
+    const t=document.createElement('div');
+    t.textContent=m.text;
+    el.appendChild(t);
+  }
+
+  if(m.image){
+    const img=document.createElement('img');
+    img.src=m.image;
+    img.className=m.isSticker?'chat-sticker':'chat-img';
+    el.appendChild(img);
+  }
+
+  const tm=document.createElement('div');
+  tm.className='time';
+  tm.textContent=new Date(m.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  el.appendChild(tm);
+
+  box.appendChild(el);
+  box.scrollTop=box.scrollHeight;
+}
+
+function system(text){const el=document.createElement('div');el.className='system';el.textContent=text;$('messages').appendChild(el);$('messages').scrollTop=$('messages').scrollHeight}
+
+function connect(){
+  myName=$('name').value.trim();
+  const room=$('room').value.trim().toUpperCase();
+  if(!myName||!room)return;
+  socket=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host);
+  $('status').textContent='Menghubungkan...';
+  socket.onopen=()=>socket.send(JSON.stringify({type:'join',name:myName,room}));
+  socket.onmessage=e=>{
+    const m=JSON.parse(e.data);
+    if(m.type==='joined'){
+      $('join').style.display='none';
+      $('chat').style.display='block';
+      $('roomLabel').textContent='ROOM '+m.room;
+      $('status').textContent='Terhubung';
+      m.history.forEach(x=>addMessage(x,x.name===myName));
+    }
+    else if(m.type==='message')addMessage(m,m.name===myName);
+    else if(m.type==='system')system(m.text);
+    else if(m.type==='error')system(m.text);
+  };
+  socket.onclose=()=>$('status').textContent='Terputus';
+}
+
+$('joinBtn').addEventListener('click',connect);
+
+// Kirim Pesan Teks
+$('form').addEventListener('submit',e=>{
+  e.preventDefault();
+  const text=$('text').value.trim();
+  if(!text||!socket||socket.readyState!==1)return;
+  socket.send(JSON.stringify({type:'chat',text}));
+  $('text').value='';
+  $('text').focus();
+});
+
+// Fitur Kirim Foto
+$('photoBtn').addEventListener('click',()=>$('imageInput').click());
+$('imageInput').addEventListener('change',e=>{
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=evt=>{
+    const base64=evt.target.result;
+    if(socket&&socket.readyState===1){
+      socket.send(JSON.stringify({type:'chat',text:'',image:base64,isSticker:false}));
+    }
+    $('imageInput').value='';
+  };
+  reader.readAsDataURL(file);
+});
+
+// Fitur Buat Stiker
+$('makeStickerBtn').addEventListener('click',()=>{
+  const file=$('stickerInput').files[0];
+  if(!file)return alert('Pilih foto dulu buat bikin stiker!');
+  const img=new Image();
+  const reader=new FileReader();
+  reader.onload=evt=>{
+    img.src=evt.target.result;
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      const ctx=canvas.getContext('2d');
+      canvas.width=256;
+      canvas.height=256;
+      ctx.clearRect(0,0,256,256);
+      
+      // Scale image to fit inside 256x256 while keeping aspect ratio
+      const hRatio=256/img.width;
+      const vRatio=256/img.height;
+      const ratio=Math.min(hRatio,vRatio);
+      const centerShiftX=(256-img.width*ratio)/2;
+      const centerShiftY=(256-img.height*ratio)/2;
+      
+      ctx.drawImage(img,0,0,img.width,img.height,centerShiftX,centerShiftY,img.width*ratio,img.height*ratio);
+      pendingStickerBase64=canvas.toDataURL('image/png');
+      $('stickerPrevImg').src=pendingStickerBase64;
+      $('stickerPrevBox').style.display='flex';
+    };
+  };
+  reader.readAsDataURL(file);
+});
+
+$('sendStickerBtn').addEventListener('click',()=>{
+  if(!pendingStickerBase64||!socket||socket.readyState!==1)return;
+  socket.send(JSON.stringify({type:'chat',text:'',image:pendingStickerBase64,isSticker:true}));
+  $('stickerPrevBox').style.display='none';
+  $('settings').classList.remove('open');
+  pendingStickerBase64=null;
+  $('stickerInput').value='';
+});
+
+$('settingsBtn').addEventListener('click',()=>{$('settings').classList.toggle('open')});
+
+themes.forEach(x=>{const b=document.createElement('button');b.className='swatch';b.title=x[0];b.style.background=x[1];b.addEventListener('click',()=>{document.documentElement.style.setProperty('--accent',x[1]);document.documentElement.style.setProperty('--bg',x[2]);document.documentElement.style.setProperty('--text',x[3]);document.documentElement.style.setProperty('--bubble',x[4])});$('swatches').appendChild(b)});
+walls.forEach(x=>{const b=document.createElement('button');b.className='wall '+(x[0]==='none'?'none':'');b.title=x[0];b.style.background=x[1]||'';b.addEventListener('click',()=>document.documentElement.style.setProperty('--wall',x[1]||'none'));$('wallpapers').appendChild(b)});
+$('applyWall').addEventListener('click',()=>{const u=$('wallUrl').value.trim();if(u&&/^https?:\/\//i.test(u))document.documentElement.style.setProperty('--wall','url("'+u.replace(/"/g,'')+'")')});
+</script></body></html>
